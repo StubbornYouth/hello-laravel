@@ -8,6 +8,14 @@ use Auth;
 
 class UserController extends Controller
 {
+    //Laravel 中间件 (Middleware) 为我们提供了一种非常棒的过滤机制来过滤进入应用的 HTTP 请求，第一个参数是中间件名称，第二个为要进行过滤的动作
+    //except是除了指定的，其它都需要登录后才能访问,类似黑名单过滤机制
+    //相反，还有白名单 only
+    public function __construct(){
+        $this->middleware('auth',[
+            'except' => ['show','create','store']
+        ]);
+    }
     //创建用户页面
     function create(){
         return view('user.create');
@@ -42,5 +50,26 @@ class UserController extends Controller
         //重定向 这里的参数传的是新创建的用户id
         return redirect()->route('users.show',[$user]);
     }
+    //转到修改界面
+    public function edit(User $user){
+        //授权策略定义完成并与当前模型联系起来后，就可以使用authorize方法来验证用户的授权策略
+        //该方法是父类之中的，两个参数，一个是授权策略定义的方法名称，另一个是验证数据
+        $this->authorize('update',$user);
+        return view('user.edit',compact('user'));
+    }
 
+    //提交修改
+    public function update(User $user,Request $request){
+        $this->validate($request,[
+            'name' => 'required|min:3|max:50',
+            'password' => 'nullable|confirmed|min:6|max:20'
+        ]);
+        $data=['name'=>$request->name];
+        if($request->password){
+            $data['password']=bcrypt($request->password);
+        }
+        $user->update($data);
+        session()->flash('success','修改信息成功！');
+        return redirect()->route('users.show',$user->id );
+    }
 }
