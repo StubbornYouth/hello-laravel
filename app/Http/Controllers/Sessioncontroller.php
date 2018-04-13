@@ -8,8 +8,16 @@ use Auth;
 class Sessioncontroller extends Controller
 {
     //
+    public function __construct(){
+        //使用Auth中间件的guest来设置只让未登录用户对登录页的访问
+        $this->middleware('guest',[
+            'only' => ['create']
+        ]);
+    }
+
     public function create()
     {
+
         return view('sessions.create');
     }
 
@@ -25,7 +33,10 @@ class Sessioncontroller extends Controller
             //数据库中email和密码都匹配
             session()->flash('success','欢迎回来'.Auth::user()->name);
             //Laravel 提供的 Auth::user() 方法来获取 当前登录用户 的信息，并将数据传送给路由。
-            return redirect()->route('users.show',[Auth::user()]);
+           // return redirect()->route('users.show',[Auth::user()]);
+
+            //友好的跳转 redirect()提供了一个intended方法可以跳转到用户上一次请求的页面地址，也接收一个默认地址参数，当上一次请求为空时，跳转到默认地址
+            return redirect()->intended(route('users.show',[Auth::user()]));
         }
         else{
             session()->flash('danger','登录失败，邮箱与密码不匹配！');

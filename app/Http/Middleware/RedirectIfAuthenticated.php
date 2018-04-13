@@ -15,10 +15,13 @@ class RedirectIfAuthenticated
      * @param  string|null  $guard
      * @return mixed
      */
+
+    //当用户禁止访问某一页面时默认跳转页面
     public function handle($request, Closure $next, $guard = null)
     {
         if (Auth::guard($guard)->check()) {
-            return redirect('/home');
+            session()->flash('info','您当前已登录！');
+            return redirect('/');
         }
 
         return $next($request);

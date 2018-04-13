@@ -25,4 +25,9 @@ class UserPolicy
         //判断二者是否相同
         return $currentUser->id === $user->id;
     }
+
+    //管理员删除用户的权限验证
+    public function destroy(User $currentUser,User $user){
+        return $currentUser->is_admin && $currentUser->id!==$user->id;
+    }
 }

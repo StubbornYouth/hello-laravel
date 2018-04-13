@@ -13,8 +13,19 @@ class UserController extends Controller
     //相反，还有白名单 only
     public function __construct(){
         $this->middleware('auth',[
-            'except' => ['show','create','store']
+            'except' => ['show','create','store','index']
         ]);
+
+        //只允许未登录用户访问注册页面
+        $this->middleware('guest',[
+            'only' => ['create']
+        ]);
+    }
+    //所有用户列表
+    function index(){
+        //该方法用来指定每页生成的数据数量为10条
+        $users=User::paginate(10);
+        return view('user.index',compact('users'));
     }
     //创建用户页面
     function create(){
@@ -71,5 +82,12 @@ class UserController extends Controller
         $user->update($data);
         session()->flash('success','修改信息成功！');
         return redirect()->route('users.show',$user->id );
+    }
+    //删除用户
+    public function destroy(User $user){
+        $this->authorize('destroy',$user);
+        $user->delete();
+        session()->flash('success','删除用户成功!');
+        return redirect()->back();
     }
 }
