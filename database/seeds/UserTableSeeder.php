@@ -23,7 +23,8 @@ class UserTableSeeder extends Seeder
             'name' => 'Aufree',
             'email' => 'Aufree@yousails.com',
             'password' => bcrypt('password'),
-            'is_admin' => true
+            'is_admin' => true,
+            'activated' => true,
         ]);
 
     }

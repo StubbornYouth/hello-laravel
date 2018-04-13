@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Auth;
+use Mail;
 
 class UserController extends Controller
 {
@@ -13,7 +14,7 @@ class UserController extends Controller
     //相反，还有白名单 only
     public function __construct(){
         $this->middleware('auth',[
-            'except' => ['show','create','store','index']
+            'except' => ['show','create','store','index','confirmEmail']
         ]);
 
         //只允许未登录用户访问注册页面
@@ -55,11 +56,20 @@ class UserController extends Controller
             )
         );
         //Laravel 中，如果要让一个已认证通过的用户实例进行登录，可以使用以下方法：
-        Auth::login($user);
+        //Auth::login($user);
+
+        //发送激活邮件
+        $this->sendEmailConfirmationTo($user);
         //session会话 存入缓存数据 flash()方法让会话只在下一次请求有效
-        session()->flash('success',"恭喜你，注册成功！");
+        //session()->flash('success',"恭喜你，注册成功！");
+
+        //提示查看激活邮件
+        session()->falsh('info','请到邮箱查看激活邮件');
         //重定向 这里的参数传的是新创建的用户id
-        return redirect()->route('users.show',[$user]);
+        //return redirect()->route('users.show',[$user]);
+
+        //跳转到首页
+        return redirect()->route('home');
     }
     //转到修改界面
     public function edit(User $user){
@@ -89,5 +99,38 @@ class UserController extends Controller
         $user->delete();
         session()->flash('success','删除用户成功!');
         return redirect()->back();
+    }
+
+    //通过 Mail 接口的 send 方法来进行邮件发送
+    protected function sendEmailConfirmationTo($user){
+        //视图名称
+        $view='emails.confirm';
+        //发送给视图的数据
+        $data=compact('user');
+        //发送邮箱
+        $from='aufree@yousails.com';
+        //发送者
+        $name='Aufree';
+        //接收邮箱
+        $to=$user->email;
+        //邮件信息
+        $subject="感谢注册laravel应用！请确认你的邮箱！";
+        Mail::send($view,$data,function($message) use ($from,$name,$to,$subject){
+            $message->from($from,$name)->to($to)->subject($subject);
+        });
+    }
+    public function confirmEmail($token){
+        //Eloquent 的 where 方法接收两个参数，第一个参数为要进行查找的字段名称，第二个参数为对应的值，查询结果返回的是一个数组，因此我们需要使用 firstOrFail 方法来取出第一个用户
+        $user = User::where('activation',$token)->firstOrFail();
+
+        //激活，将令牌置为空
+        $user->activated= true;
+        $user->activation_token = null;
+        $user->save();
+
+        //登录
+        Auth::login($user);
+        session()->flash('success','恭喜你,激活成功！');
+        return redirect()->route('users.show',[$user]);
     }
 }
